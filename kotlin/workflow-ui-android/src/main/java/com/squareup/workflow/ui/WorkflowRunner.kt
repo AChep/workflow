@@ -21,6 +21,7 @@ import android.os.Bundle
 import android.support.annotation.CheckResult
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModelProviders
 import com.squareup.workflow.Workflow
 import io.reactivex.BackpressureStrategy.LATEST
@@ -54,9 +55,9 @@ interface WorkflowRunner<out OutputT> {
   val output: Flowable<out OutputT>
 
   /**
-   * A stream of the rendering values emitted by the running [Workflow].
+   * The latest rendering value emitted by the running [Workflow].
    */
-  val renderings: Observable<out Any>
+  val rendering: LiveData<out Any>
 
   val viewRegistry: ViewRegistry
 

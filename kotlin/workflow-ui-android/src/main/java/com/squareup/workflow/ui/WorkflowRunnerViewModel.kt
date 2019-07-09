@@ -16,14 +16,16 @@
 package com.squareup.workflow.ui
 
 import android.os.Bundle
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.liveData
+import androidx.lifecycle.viewModelScope
 import com.squareup.workflow.RenderingAndSnapshot
 import com.squareup.workflow.Snapshot
 import com.squareup.workflow.Workflow
 import com.squareup.workflow.launchWorkflowIn
 import io.reactivex.Flowable
-import io.reactivex.Observable
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,12 +33,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.asFlowable
-import kotlinx.coroutines.rx2.asObservable
 import org.jetbrains.annotations.TestOnly
 import java.util.concurrent.CancellationException
 import kotlin.reflect.jvm.jvmName
@@ -88,10 +87,9 @@ internal class WorkflowRunnerViewModel<OutputT : Any>(
 
   private var lastSnapshot: Snapshot = Snapshot.EMPTY
 
-  @UseExperimental(ExperimentalCoroutinesApi::class)
-  override val renderings: Observable<out Any> = renderingsFlow
+  override val rendering: LiveData<out Any> = renderingsFlow
       .map { it.rendering }
-      .asObservable()
+      .asLiveData()
 
   @UseExperimental(ExperimentalCoroutinesApi::class)
   override val output: Flowable<out OutputT> = outputsFlow
@@ -118,11 +116,9 @@ internal class WorkflowRunnerViewModel<OutputT : Any>(
   }
 }
 
-/**
- * Invokes `block` every time a new collector begins collecting this [Flow].
- */
 @UseExperimental(ExperimentalCoroutinesApi::class)
-private fun <T> Flow<T>.onCollect(block: () -> Unit): Flow<T> = flow {
-  block()
-  emitAll(this@onCollect)
+private fun <T> Flow<T>.asLiveData(): LiveData<T> = liveData {
+  collect {
+    emit(it)
+  }
 }
