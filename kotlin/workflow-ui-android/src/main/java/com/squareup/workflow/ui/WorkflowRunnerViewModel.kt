@@ -23,6 +23,8 @@ import com.squareup.workflow.RenderingAndSnapshot
 import com.squareup.workflow.Snapshot
 import com.squareup.workflow.Workflow
 import com.squareup.workflow.launchWorkflowIn
+import io.reactivex.Flowable
+import io.reactivex.Observable
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,8 +34,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactive.flow.asPublisher
 import kotlinx.coroutines.rx2.asFlowable
+import kotlinx.coroutines.rx2.asObservable
 import org.jetbrains.annotations.TestOnly
 import org.reactivestreams.Publisher
 import java.util.concurrent.CancellationException
@@ -50,7 +52,7 @@ import kotlin.reflect.jvm.jvmName
 internal class WorkflowRunnerViewModel<OutputT : Any>(
   override val viewRegistry: ViewRegistry,
   private val renderingsFlow: Flow<RenderingAndSnapshot<Any>>,
-  override val output: Publisher<out OutputT>,
+  private val outputFlow: Flow<OutputT>,
   private val scope: CoroutineScope
 ) : ViewModel(), WorkflowRunner<OutputT> {
 
@@ -72,14 +74,16 @@ internal class WorkflowRunnerViewModel<OutputT : Any>(
         snapshot
     ) { renderings, outputs ->
       @Suppress("UNCHECKED_CAST")
-      WorkflowRunnerViewModel(viewRegistry, renderings, outputs.asFlowable().share(), this) as T
+      WorkflowRunnerViewModel(viewRegistry, renderings, outputs, this) as T
     }
   }
 
-  override val renderings: Publisher<out Any> = renderingsFlow
+  override val output: Flowable<out OutputT>
+    get() = outputFlow.asFlowable()
+
+  override val renderings: Observable<out Any> get() = renderingsFlow
       .map { it.rendering }
-      .asFlowable()
-      .share()
+      .asObservable()
 
   private val snapshotJob = scope.launch {
     renderingsFlow

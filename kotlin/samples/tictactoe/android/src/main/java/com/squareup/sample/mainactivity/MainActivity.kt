@@ -43,12 +43,12 @@ class MainActivity : AppCompatActivity() {
         ?: MainComponent()
 
     workflowRunner = setContentWorkflow(viewRegistry, component.mainWorkflow, savedInstanceState)
-        .apply {
-          if (Timber.treeCount() > 0) {
-            loggingSub = Observable.fromPublisher(renderings)
-                .subscribe { Timber.d("rendering: %s", it) }
-          }
-        }
+//        .apply {
+//          if (Timber.treeCount() > 0) {
+//            loggingSub = Observable.fromPublisher(renderings)
+//                .subscribe { Timber.d("rendering: %s", it) }
+//          }
+//        }
   }
 
   override fun onBackPressed() {

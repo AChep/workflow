@@ -29,7 +29,6 @@ import io.reactivex.Observable
 import io.reactivex.Observable.never
 import io.reactivex.disposables.Disposable
 import io.reactivex.disposables.Disposables
-import org.reactivestreams.Publisher
 
 /**
  * A view that can be driven by a [WorkflowRunner]. In most cases you'll use
@@ -61,11 +60,8 @@ class WorkflowLayout(
           emitter.setCancellable { removeOnAttachStateChangeListener(this) }
         }
       }
-      .doOnEach { println("create: $it") }
-      .distinctUntilChanged()
-      .doOnEach { println("distinct: $it") }
 
-  private var sub = Disposables.disposed()
+  private var renderingsSubscription = Disposables.disposed()
 
   /**
    * Subscribes to [renderings] (only while [isAttachedToWindow]), and uses [registry] to
@@ -77,22 +73,18 @@ class WorkflowLayout(
    */
 
   fun start(
-    renderings: Publisher<out Any>,
+    renderings: Observable<out Any>,
     registry: ViewRegistry
   ) {
-    takeWhileAttached(Observable.fromPublisher(renderings)) { show(it, registry)}
-//    sub.dispose()
-//    sub = attached
-//        .doOnEach { println("attached: $it") }
-//        .switchMap { attached ->
-//          when {
-//            attached -> never()
-//            else -> Observable.fromPublisher(renderings)
-//                .doOnEach { println("asObservable: $it") }
-//          }
-//        }
-//        .doOnEach { println("switchmap: $it") }
-//        .subscribe { show(it, registry) }
+    renderingsSubscription.dispose()
+    renderingsSubscription = attached
+        .switchMap { attached ->
+          when {
+            attached -> renderings
+            else -> never()
+          }
+        }
+        .subscribe { show(it, registry) }
   }
 
   /**

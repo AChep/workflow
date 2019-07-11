@@ -23,6 +23,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProviders
 import com.squareup.workflow.Workflow
+import io.reactivex.Flowable
+import io.reactivex.Observable
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,20 +53,22 @@ interface WorkflowRunner<out OutputT> {
    * Outputs emitted while there are no active observers are cached -- that is,
    * all outputs will be delivered to some observer.
    */
-  val output: Publisher<out OutputT>
+  val output: Flowable<out OutputT>
 
   /**
    * A stream of the renderings emitted by the running [Workflow]. Renderings emitted
    * while there are no active observers are dropped.
    */
-  val renderings: Publisher<out Any>
+  val renderings: Observable<out Any>
 
   val viewRegistry: ViewRegistry
 
   companion object {
     /**
-     * Returns a [ViewModel][androidx.lifecycle.ViewModel] implementation of
-     * [WorkflowRunner], tied to the given [activity].
+     * Returns an implementation of [WorkflowRunner] whose lifetime is tied to the given [activity].
+     * Under the hood this uses [ViewModel][androidx.lifecycle.ViewModel], which means we can
+     * count on working with a single instance of the [WorkflowRunner] across configuration
+     * changes, until the activity is [finished][FragmentActivity.finish].
      *
      * It's probably more convenient to use [FragmentActivity.setContentWorkflow]
      * rather than calling this method directly.
@@ -171,8 +175,10 @@ interface WorkflowRunner<out OutputT> {
     }
 
     /**
-     * Returns a [ViewModel][androidx.lifecycle.ViewModel] implementation of
-     * [WorkflowRunner], tied to the given [fragment].
+     * Returns an implementation of [WorkflowRunner] whose lifetime is tied to the given [fragment].
+     * Under the hood this uses [ViewModel][androidx.lifecycle.ViewModel], which means we can
+     * count on working with a single instance of the [WorkflowRunner] across configuration
+     * changes.
      *
      * It's probably more convenient to subclass [WorkflowFragment] rather than calling
      * this method directly.
